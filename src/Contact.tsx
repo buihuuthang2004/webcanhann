@@ -1,7 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import Footer from './components/Footer';
-
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynOQ5auz6NiUE06rtm6WvKVE5wbtOAyjuyKtdmYEhLqBTSheEpQpg0FeITrVrD4A/exec'; // <-- Dán link web app Google Apps Script ở đây
+import { useForm, ValidationError } from '@formspree/react';
 
 const contactContent = {
   vi: {
@@ -73,49 +72,8 @@ const contactContent = {
 };
 
 const Contact: React.FC = () => {
-  const [sending, setSending] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-  const nameRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
-  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const [state, handleSubmit] = useForm('xjkwdjzy');
   const content = contactContent['vi'];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSending(true);
-    setError('');
-    setSuccess(false);
-    const name = nameRef.current?.value || '';
-    const email = emailRef.current?.value || '';
-    const phone = phoneRef.current?.value || '';
-    const message = messageRef.current?.value || '';
-    if (!name || !email || !message) {
-      setError(content.required);
-      setSending(false);
-      return;
-    }
-    try {
-      const res = await fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, message })
-      });
-      if (res.ok) {
-        setSuccess(true);
-        if (nameRef.current) nameRef.current.value = '';
-        if (emailRef.current) emailRef.current.value = '';
-        if (phoneRef.current) phoneRef.current.value = '';
-        if (messageRef.current) messageRef.current.value = '';
-      } else {
-        setError(content.error);
-      }
-    } catch (err) {
-      setError(content.error);
-    }
-    setSending(false);
-  };
 
   return (
     <>
@@ -128,24 +86,26 @@ const Contact: React.FC = () => {
         <div className="contact-content" style={{flexDirection: window.innerWidth <= 700 ? 'column' : 'row'}}>
           <form className="contact-form animate-slide-up" onSubmit={handleSubmit}>
             <div className="form-group">
-              <input type="text" id="name" name="name" placeholder=" " required ref={nameRef} />
+              <input type="text" id="name" name="name" placeholder=" " required />
               <label htmlFor="name">{content.name}</label>
             </div>
             <div className="form-group">
-              <input type="email" id="email" name="email" placeholder=" " required ref={emailRef} />
+              <input type="email" id="email" name="email" placeholder=" " required />
               <label htmlFor="email">{content.email}</label>
+              <ValidationError prefix="Email" field="email" errors={state.errors} />
             </div>
             <div className="form-group">
-              <input type="tel" id="phone" name="phone" placeholder=" " ref={phoneRef} />
+              <input type="tel" id="phone" name="phone" placeholder=" " />
               <label htmlFor="phone">{content.phone}</label>
             </div>
             <div className="form-group">
-              <textarea id="message" name="message" placeholder=" " rows={4} required ref={messageRef}></textarea>
+              <textarea id="message" name="message" placeholder=" " rows={4} required></textarea>
               <label htmlFor="message">{content.message}</label>
+              <ValidationError prefix="Message" field="message" errors={state.errors} />
             </div>
-            <button type="submit" className="btn btn-primary animate-bounce" disabled={sending}>{sending ? content.sending : content.btn}</button>
-            {success && <div style={{color:'#219653',marginTop:'1em'}}>{content.success}</div>}
-            {error && <div style={{color:'#d32f2f',marginTop:'1em'}}>{error}</div>}
+            <button type="submit" className="btn btn-primary animate-bounce" disabled={state.submitting}>{state.submitting ? content.sending : content.btn}</button>
+            {state.succeeded && <div style={{color:'#219653',marginTop:'1em'}}>{content.success}</div>}
+            {Array.isArray(state.errors) && state.errors.length > 0 && <div style={{color:'#d32f2f',marginTop:'1em'}}>{content.error}</div>}
           </form>
           <div className="contact-info animate-slide-up">
             <h4>{content.info}</h4>
